@@ -1,50 +1,58 @@
 <?php
 namespace Mouf\Utils\Cache;
 
+use Memcached;
+use Psr\Log\LoggerInterface;
+
 /**
  * This package contains a cache mechanism that relies on Memcached lib.
- * 
- * @Component
  */
-class MemcachedCached implements CacheInterface {
+class MemcachedCache implements CacheInterface {
 	
 	/**
 	 * The default time to live of elements stored in the session (in seconds).
 	 * Please note that if the session is flushed, all the elements of the cache will disapear anyway.
 	 * If empty, the time to live will be the time of the session. 
 	 *
-	 * @Property
 	 * @var int
 	 */
-	public $defaultTimeToLive;
+	protected $defaultTimeToLive;
 	
 	/**
 	 * The logger used to trace the cache activity.
 	 *
-	 * @Property
-	 * @Compulsory
-	 * @var LogInterface
+	 * @var LoggerInterface
 	 */
-	public $log;
+	protected $log;
 	
 	/**
-	 * Memcached Server parameters. Register the host and port for each server, like "127.0.0.1;11211"
+	 * Memcached Server parameters. Register the host and port for each server, like "127.0.0.1:11211"
 	 * This plugin establishes a connection only if it is used by a request.
 	 *
-	 * @Property
-	 * @Compulsory
 	 * @var array<string>
 	 */
-	public $servers;
+	protected $servers;
 	
 	/**
 	 * If the connection cannot be establish, throw an exception if the parameter is check (by default), else nothing
 	 *
-	 * @Property
-	 * @Compulsory
 	 * @var bool
 	 */
-	public $crash = true;
+	protected $crash = true;
+	
+	/**
+	 * 
+	 * @param array<string> $servers Memcached Server parameters. Register the host and port for each server, like "127.0.0.1;11211"
+	 * @param int $defaultTimeToLive The default time to live of elements stored in the session (in seconds). Defaults to 3600.
+	 * @param LoggerInterface $log The logger used to trace the cache activity.
+	 * @param bool $exceptionOnConnectionError If the connection cannot be establish, throw an exception if the parameter is check (by default), else nothing
+	 */
+	public function __construct($servers, $defaultTimeToLive = 3600, LoggerInterface $log = null, $exceptionOnConnectionError = true) {
+		$this->servers = $servers;
+		$this->defaultTimeToLive = $defaultTimeToLive;
+		$this->log = $log;
+		$this->crash = $exceptionOnConnectionError;
+	}
 	
 	/**
 	 * Memcached object to save the connection
@@ -67,27 +75,31 @@ class MemcachedCached implements CacheInterface {
 	 */
 	private function connection() {
 		if($this->servers) {
-			$this->memcachedObject = new Memcached;
+			$this->memcachedObject = new Memcached();
 			$noServer = true;
 			foreach ($this->servers as $server) {
-				$parameters = explode(';', $server);
+				$parameters = explode(':', $server);
 				if(!isset($parameters[1]))
 					$parameters[1] = '11211';
 				$this->memcachedObject->addServer($parameters[0], $parameters[1]);
 				$status = $this->memcachedObject->getStats();
-				if($status)
+				if($status) {
 					$noServer = false;
+				}
 			}
 			if($noServer) {
 				$this->noConnection = true;
-				$this->log->error('Memcache Exception, unable to establish connection to memcached server');
-				if($this->crash)
-					throw new Exception('Memcache Exception, unable to establish connection to memcached server');
+				if ($this->log) {
+					$this->log->error('Memcache Exception, unable to establish connection to memcached server');
+				}
+				if($this->crash) {
+					throw new MemcachedCachedException('Memcache Exception, unable to establish connection to memcached server');
+				}
 				return false;
 			}
 			return true;
 		}
-		throw new Exception("Error no connection set in Memcached cache. Add it in the Mouf interface");
+		throw new MemcachedCachedException("Error no connection set in Memcached cache. Add it in the Mouf interface");
 	}
 	
 	/**
@@ -97,12 +109,13 @@ class MemcachedCached implements CacheInterface {
 	 * @return mixed
 	 */
 	public function get($key) {
-		if(is_null($this->memcachedObject)) {
-			if(!$this->connection())
-				return false;
+		if($this->memcachedObject === null) {
+			if(!$this->connection()) {
+				return null;
+			}
+		} elseif($this->noConnection) {
+			return null;
 		}
-		elseif($this->noConnection)
-			return false;
 		
 		return $this->memcachedObject->get($key);
 	}
@@ -157,4 +170,3 @@ class MemcachedCached implements CacheInterface {
 	}
 	
 }
-?>
