@@ -32,7 +32,7 @@
 			"logo" : "logo.png",
 			"install" : [{
 					"type" : "class",
-					"class" : "Mouf\\Utils\\Cache\\MemcachedCacheInstaller"
+					"class" : "Mouf\\Utils\\Cache\\MemcachedCacheInstaller",
 					"description" : "The install process of MemcachedCache installs a simple cache instance."
 				}
 			]
