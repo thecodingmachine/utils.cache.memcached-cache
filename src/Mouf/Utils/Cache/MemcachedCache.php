@@ -42,7 +42,7 @@ class MemcachedCache implements CacheInterface {
 	
 	/**
 	 * 
-	 * @param array<string> $servers Memcached Server parameters. Register the host and port for each server, like "127.0.0.1;11211"
+	 * @param array<string> $servers Memcached Server parameters. Register the host and port for each server, like "127.0.0.1:11211"
 	 * @param int $defaultTimeToLive The default time to live of elements stored in the session (in seconds). Defaults to 3600.
 	 * @param LoggerInterface $log The logger used to trace the cache activity.
 	 * @param bool $exceptionOnConnectionError If the connection cannot be establish, throw an exception if the parameter is check (by default), else nothing
