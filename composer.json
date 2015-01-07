@@ -29,7 +29,13 @@
 	},
 	"extra" : {
 		"mouf" : {
-			"logo" : "logo.png"
+			"logo" : "logo.png",
+			"install" : [{
+					"type" : "class",
+					"class" : "Mouf\\Utils\\Cache\\MemcachedCacheInstaller"
+					"description" : "The install process of MemcachedCache installs a simple cache instance."
+				}
+			]
 		}
 	}
 }
