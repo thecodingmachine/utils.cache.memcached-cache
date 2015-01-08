@@ -5,7 +5,7 @@
  * See the file LICENSE.txt for copying permission.
  */
 
-namespace Mouf\Html\Template;
+namespace Mouf\Utils\Cache;
 
 use Mouf\Installer\PackageInstallerInterface;
 use Mouf\MoufManager;
